@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pages/task_list_page.dart'; // 导入任务列表页面组件
 
 void main() {
   runApp(const MyApp());
@@ -29,7 +30,7 @@ class _MainPageState extends State<MainPage> {
   // 定义两个页面，分别对应洞府和卷轴
   final List<Widget> _pages = [
     const DonfuHomePage(), // 洞府页面
-    const PlaceholderPage(), // 卷轴页面
+    const TaskListPage(), // 卷轴页面
   ];
 
   @override
