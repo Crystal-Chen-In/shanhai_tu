@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/task_list_page.dart'; // 导入任务列表页面组件
+import 'pages/focus_page.dart'; // 导入专注页面组件
 
 void main() {
   runApp(const MyApp());
@@ -60,8 +62,30 @@ class _MainPageState extends State<MainPage> {
 }
 
 //创建洞府页面组件（白泽、修为显示、专注按钮）
-class DonfuHomePage extends StatelessWidget {
+class DonfuHomePage extends StatefulWidget {
   const DonfuHomePage({super.key});
+
+  @override
+  State<DonfuHomePage> createState() => _DonfuHomePageState();
+
+}
+
+class _DonfuHomePageState extends State<DonfuHomePage> {
+  int _cultivation = 0; // 修为值
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCultivation(); // 初始化时加载修为值
+  }
+
+  // 加载修为值
+  Future<void> _loadCultivation() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _cultivation = prefs.getInt('cultivation') ?? 0; // 获取修为值，默认为0
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +99,8 @@ class DonfuHomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/baize1.png', // 白泽图片占位
+            Image.asset(
+            'assets/images/baize1.png', // 白泽图片占位
             width: 200, 
             ),
             const SizedBox(height: 30),
@@ -92,32 +117,24 @@ class DonfuHomePage extends StatelessWidget {
                   )
                 ]
               ),
-              child: const Text(
-                '修为：0',
-                style: TextStyle(
+              child: Text(
+                '修为：$_cultivation',
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.teal,
                 ),
               ),
             ),
             const SizedBox(height: 40),
             ElevatedButton(
-              onPressed: (){
-                // 点击专注按钮时显示提示对话框
-                showDialog(
-                  context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('炼丹炉'),
-                    content: const Text('专注计时功能即将开放，敬请期待！'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: const Text('知道了'),
-                      )
-                    ],
-                  )
+              onPressed: () async {
+                // 点击开始专注按钮，跳转到专注修心页面
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (ctx) => const FocusPage()),
                 );
+                // 从专注修心页面返回后，重新加载修为值，更新界面
+                _loadCultivation();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.teal,
@@ -129,7 +146,7 @@ class DonfuHomePage extends StatelessWidget {
               child: const Text(
                 '开始专注',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 20,
                   color: Colors.white,
                 ),
               ),
