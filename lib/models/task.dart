@@ -5,6 +5,7 @@ class Task {
   DateTime dueDate;
   bool isCompleted;
   DateTime createdAt;
+  DateTime? completedAt; // 任务完成时间,null表示未完成
 
   Task({
     required this.id,
@@ -12,6 +13,7 @@ class Task {
     required this.dueDate,
     this.isCompleted = false,
     DateTime? createdAt,
+    this.completedAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
   // 将 Task 对象转换为 Map 以便存储
@@ -21,6 +23,7 @@ class Task {
     'dueDate': dueDate.toIso8601String(),
     'isCompleted': isCompleted,
     'createdAt': createdAt.toIso8601String(),
+    'completedAt': completedAt?.toIso8601String(),
   };
 
   // 从 Map 创建 Task 对象
@@ -30,6 +33,7 @@ class Task {
     dueDate: DateTime.parse(json['dueDate']),
     isCompleted: json['isCompleted'],
     createdAt: DateTime.parse(json['createdAt']),
+    completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
   );
 
 }

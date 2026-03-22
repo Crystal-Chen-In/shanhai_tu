@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task.dart';
+import '../utils/beast_manager.dart';
+import '../widgets/feedback_dialog.dart';
 
 class TaskListPage extends StatefulWidget {
   const TaskListPage({super.key});
@@ -68,11 +70,43 @@ class _TaskListPageState extends State<TaskListPage> {
   }
 
   // 切换任务完成状态
-  void _toggleTaskCompletion(Task task) {
-    setState(() {
-      task.isCompleted = !task.isCompleted;
-    });
-    _saveTasks(); // 保存更新后的任务列表
+  void _toggleTaskCompletion(Task task) async {
+    // 如果任务原本未完成，现在要标记为完成
+    if(!task.isCompleted) {
+      // 记录完成时间
+      task.completedAt = DateTime.now();
+      // 判断是否提前完成(比较日期而非具体时间)
+      final now = DateTime.now();
+      final duedate = DateTime(task.dueDate.year,task.dueDate.month,task.dueDate.day); // 提前完成
+      final nowdate = DateTime(now.year,now.month,now.day); // 逾期完成
+      String scene;
+      if(nowdate.isBefore(duedate)) {
+        scene = 'task_early';
+      } else if(nowdate.isAfter(duedate)) {
+        scene = 'task_late';
+      } else {
+        scene = 'task_on_time'; // 刚好按时完成
+      }
+      final dialogue = BeastManager.getRandomDialogue(scene);
+
+      // 更新状态
+      setState(() {
+        task.isCompleted = true;
+      });
+      _saveTasks(); // 保存更新后的任务列表
+
+      // 显示反馈对话框
+      if(mounted) {
+        await FeedbackDialog.show(context, dialogue);
+      }
+    }else {
+      // 如果任务原本已完成，现在要标记为未完成
+      task.completedAt = null; // 清除完成时间
+      setState(() {
+        task.isCompleted = false;
+      });
+      _saveTasks(); // 保存更新后的任务列表
+    }
   }
 
   @override

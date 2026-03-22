@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/task_list_page.dart'; // 导入任务列表页面组件
 import 'pages/focus_page.dart'; // 导入专注页面组件
+import '../models/task.dart'; // 导入任务模型
+import '../utils/beast_manager.dart'; // 获取随机台词
+import '../widgets/feedback_dialog.dart'; // 导入反馈对话框组件
 
 void main() {
   runApp(const MyApp());
@@ -77,6 +81,7 @@ class _DonfuHomePageState extends State<DonfuHomePage> {
   void initState() {
     super.initState();
     _loadCultivation(); // 初始化时加载修为值
+    _checkUpcomingTasks(); // 检查即将逾期的任务
   }
 
   // 加载修为值
@@ -85,6 +90,54 @@ class _DonfuHomePageState extends State<DonfuHomePage> {
     setState(() {
       _cultivation = prefs.getInt('cultivation') ?? 0; // 获取修为值，默认为0
     });
+  }
+
+  Future<void> _checkUpcomingTasks() async {
+    //加载任务列表
+    final prefs = await SharedPreferences.getInstance();
+    final String? tasksJson = prefs.getString('tasks');
+    if (tasksJson == null) return; // 没有任务数据则不继续检查
+
+    final String nonNullJson = tasksJson; // 确保 tasksJson 不为 null
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(nonNullJson);
+    } catch (e) {
+      return; // 解析失败则不继续检查
+    }
+
+    if(decoded is! List) return; // 解析结果不是列表则不继续检查
+
+    final tasks = decoded.whereType<Map<String,dynamic>>().map((item) => Task.fromJson(item)).toList();
+
+    // 筛选未完成且即将逾期任务
+    final now = DateTime.now();
+    final nowdate = DateTime(now.year, now.month, now.day);
+    const remindDays = 3; // 提前3天提醒
+    final upcomingTasks = tasks.where((task) {
+      if(task.isCompleted) return false; // 已完成的任务不提示
+      final duedate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+      final daysLeft = duedate.difference(nowdate).inDays;
+      return daysLeft >= 0 && daysLeft <= remindDays; // 0表示今日到期
+    }).toList();
+
+    // 如果有即将逾期的任务，且当天尚未提醒过，显示提示对话框
+    if(upcomingTasks.isNotEmpty){
+      //只提醒一次
+      final lastReminderDate = prefs.getString('lastUpcomingReminderDate');
+      final todayStr = nowdate.toIso8601String().split('T')[0]; // 获取年月日部分
+
+      if(lastReminderDate != todayStr){
+        await prefs.setString('lastUpcomingReminderDate', todayStr);
+
+        // 获取随机台词
+        final dialogue = BeastManager.getRandomDialogue('upcoming_reminder');
+        if(mounted){
+          await FeedbackDialog.show(context, dialogue);
+        }
+      }
+    }
+
   }
 
   @override
