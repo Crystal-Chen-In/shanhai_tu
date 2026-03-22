@@ -166,7 +166,8 @@ class _FocusPageState extends State<FocusPage> {
       );
     }
 
-    Navigator.pop(context); // 返回洞府页面
+    if(mounted) {
+      Navigator.pop(context); // 返回洞府页面
+    }
   }
-
 }
