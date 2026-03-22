@@ -1,8 +1,10 @@
 // 专注页面组件
 import 'package:flutter/material.dart';
+import 'package:shanhai_tu/utils/beast_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../utils/constants.dart';
+import '../widgets/feedback_dialog.dart';
 
 class FocusPage extends StatefulWidget {
   const FocusPage({super.key});
@@ -12,8 +14,8 @@ class FocusPage extends StatefulWidget {
 }
 
 class _FocusPageState extends State<FocusPage> {
-  //默认专注时长为 25 分钟(单位：秒)
-  static const int defaultTotalSeconds = 25 * 60;
+  //默认专注时长为 25 分钟(单位：秒)，测试时为10s
+  static const int defaultTotalSeconds = 10;//25 * 60;
 
   // 本次专注总秒数
   int _totalSeconds = defaultTotalSeconds;
@@ -164,6 +166,13 @@ class _FocusPageState extends State<FocusPage> {
     int currentTotalFocus = prefs.getInt(StorageKeys.totalFocusSeconds) ?? 0;
     currentTotalFocus += _totalSeconds;
     await prefs.setInt(StorageKeys.totalFocusSeconds, currentTotalFocus);
+
+    // 获取专注完成的随机台词
+    final dialogue = BeastManager.getRandomDialogue('focus_complete');
+
+    if(mounted) {
+      await FeedbackDialog.show(context, dialogue);
+    }
 
     // 显示完成提示
     if(mounted) {
