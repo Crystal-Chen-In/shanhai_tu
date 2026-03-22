@@ -5,6 +5,7 @@ import 'dart:convert';
 import '../models/task.dart';
 import '../utils/beast_manager.dart';
 import '../widgets/feedback_dialog.dart';
+import '../utils/constants.dart';
 
 class TaskListPage extends StatefulWidget {
   const TaskListPage({super.key});
@@ -75,17 +76,44 @@ class _TaskListPageState extends State<TaskListPage> {
     if(!task.isCompleted) {
       // 记录完成时间
       task.completedAt = DateTime.now();
-      // 判断是否提前完成(比较日期而非具体时间)
+
+      // 更新连续完成天数
+      final prefs = await SharedPreferences.getInstance();
+      int consecutiveDays = prefs.getInt(StorageKeys.consecutiveTaskDays) ?? 0;
+      final lastCompletionDateStr = prefs.getString(StorageKeys.lastTaskCompletionDate);
+
       final now = DateTime.now();
-      final duedate = DateTime(task.dueDate.year,task.dueDate.month,task.dueDate.day); // 提前完成
-      final nowdate = DateTime(now.year,now.month,now.day); // 逾期完成
+      final todayDate = DateTime(now.year, now.month, now.day); // 只比较日期部分
+      final todayStr = todayDate.toIso8601String().split('T')[0]; // 只保留日期部分
+      if(lastCompletionDateStr == null) {
+        consecutiveDays = 1;
+      } else {
+        final lastDate = DateTime.parse(lastCompletionDateStr);
+        final lastDateOnly = DateTime(lastDate.year, lastDate.month, lastDate.day);
+        final yesterdayDateOnly = todayDate.subtract(const Duration(days: 1));
+
+        if(lastDateOnly == yesterdayDateOnly) {
+          consecutiveDays += 1; // 连续完成，增加天数
+        } else if (lastDateOnly == todayDate) {
+          // 同一天内完成多次，不增加天数
+        } else {
+          consecutiveDays = 1; // 中断，重置为1
+        }
+      }
+
+      await prefs.setInt(StorageKeys.consecutiveTaskDays, consecutiveDays);
+      await prefs.setString(StorageKeys.lastTaskCompletionDate, todayStr);
+
+      // 判断是否提前完成(比较日期而非具体时间)
+      final duedate = DateTime(task.dueDate.year,task.dueDate.month,task.dueDate.day);
+      final nowdate = DateTime(now.year,now.month,now.day);
       String scene;
       if(nowdate.isBefore(duedate)) {
-        scene = 'task_early';
+        scene = 'task_early'; // 提前
       } else if(nowdate.isAfter(duedate)) {
-        scene = 'task_late';
+        scene = 'task_late'; // 逾期
       } else {
-        scene = 'task_on_time'; // 刚好按时完成
+        scene = 'task_on_time'; // 按时
       }
       final dialogue = BeastManager.getRandomDialogue(scene);
 

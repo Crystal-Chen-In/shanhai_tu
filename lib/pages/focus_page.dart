@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
+import '../utils/constants.dart';
 
 class FocusPage extends StatefulWidget {
   const FocusPage({super.key});
@@ -13,6 +14,9 @@ class FocusPage extends StatefulWidget {
 class _FocusPageState extends State<FocusPage> {
   //默认专注时长为 25 分钟(单位：秒)
   static const int defaultTotalSeconds = 25 * 60;
+
+  // 本次专注总秒数
+  int _totalSeconds = defaultTotalSeconds;
 
   // 当前专注剩余时间
   int _remainingSeconds = defaultTotalSeconds;
@@ -155,6 +159,11 @@ class _FocusPageState extends State<FocusPage> {
     int currentCultivation = prefs.getInt('cultivation') ?? 0;
     currentCultivation += 10; // 每次专注完成增加10点修为
     await prefs.setInt('cultivation', currentCultivation);
+
+    // 累计专注时长
+    int currentTotalFocus = prefs.getInt(StorageKeys.totalFocusSeconds) ?? 0;
+    currentTotalFocus += _totalSeconds;
+    await prefs.setInt(StorageKeys.totalFocusSeconds, currentTotalFocus);
 
     // 显示完成提示
     if(mounted) {
