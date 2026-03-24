@@ -14,17 +14,33 @@ class FocusPage extends StatefulWidget {
 }
 
 class _FocusPageState extends State<FocusPage> {
-  //默认专注时长为 25 分钟(单位：秒)，测试时为10s
-  static const int defaultTotalSeconds = 10;//25 * 60;
+  // 当前专注分钟数(可调)
+  int _focusMinutes = 25;
 
   // 本次专注总秒数
-  int _totalSeconds = defaultTotalSeconds;
+  int _totalSeconds = 25 * 60;
 
   // 当前专注剩余时间
-  int _remainingSeconds = defaultTotalSeconds;
+  int _remainingSeconds = 25 * 60;
 
   Timer? _timer; // 定时器对象
   bool _isActive = false; // 是否正在计时
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFocusDuration(); // 加载保存的专注时长
+  }
+
+  Future<void> _loadFocusDuration() async {
+    final prefs = await SharedPreferences.getInstance();
+    final minutes = prefs.getInt('FocusMinutes') ?? 25; // 默认25分钟
+    setState(() {
+      _focusMinutes = minutes;
+      _totalSeconds = minutes * 60;
+      _remainingSeconds = _totalSeconds;
+    });
+  }
 
   // 显示剩余时间的文本
   String get _timeText {
@@ -35,7 +51,7 @@ class _FocusPageState extends State<FocusPage> {
 
   // 计算进度
   double get _progress {
-    return 1.0 - (_remainingSeconds / defaultTotalSeconds);
+    return 1.0 - (_remainingSeconds / _focusMinutes);
   }
 
   @override
@@ -74,6 +90,28 @@ class _FocusPageState extends State<FocusPage> {
               style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),
+            // 专注时长调节行
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: _isActive ? null : _decreaseFocusTime, // 计时中禁用
+                  icon: const Icon(Icons.remove_circle_outline),
+                  iconSize: 32,
+                ),
+                Text(
+                  '$_focusMinutes 分钟',
+                  style: const TextStyle(fontSize: 18),
+                ),
+                IconButton(
+                  onPressed: _isActive ? null : _increaseFocusTime,
+                  icon: const Icon(Icons.add_circle_outline),
+                  iconSize: 32,
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
             // 专注按钮
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -150,8 +188,36 @@ class _FocusPageState extends State<FocusPage> {
     _timer?.cancel(); // 取消定时器
     setState(() {
       _isActive = false; // 更新状态为非活动
-      _remainingSeconds = defaultTotalSeconds; // 重置剩余时间
+      _remainingSeconds = _totalSeconds; // 重置剩余时间
     });
+  }
+
+  // 增
+  void _increaseFocusTime() {
+    if(_isActive) return; //计时中不允许修改
+    setState(() {
+      _focusMinutes++;
+      _totalSeconds = _focusMinutes * 60;
+      _remainingSeconds = _totalSeconds;
+    });
+    _saveFocusDuration();
+  }
+
+  // 减
+  void _decreaseFocusTime() {
+    if(_isActive || _focusMinutes <= 1) return; //最小1分钟
+    setState(() {
+      _focusMinutes--;
+      _totalSeconds = _focusMinutes * 60;
+      _remainingSeconds = _totalSeconds;
+    });
+    _saveFocusDuration();
+  }
+
+  // 保存用户专注时长
+  Future<void> _saveFocusDuration() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('focusMinutes', _focusMinutes);
   }
 
   // 专注完成事件
@@ -168,7 +234,12 @@ class _FocusPageState extends State<FocusPage> {
     await prefs.setInt(StorageKeys.totalFocusSeconds, currentTotalFocus);
 
     // 获取专注完成的随机台词
-    final dialogue = BeastManager.getRandomDialogue('focus_complete');
+    String dialogue;
+    if(_totalSeconds > 40 * 60){
+      dialogue = BeastManager.getRandomDialogue('focus_long');
+    }else {
+      dialogue = BeastManager.getRandomDialogue('focus_complete');
+    }
 
     if(mounted) {
       await FeedbackDialog.show(context, dialogue);

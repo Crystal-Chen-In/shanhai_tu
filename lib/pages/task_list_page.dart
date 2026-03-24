@@ -6,6 +6,7 @@ import '../models/task.dart';
 import '../utils/beast_manager.dart';
 import '../widgets/feedback_dialog.dart';
 import '../utils/constants.dart';
+import '../utils/task_helper.dart';
 
 class TaskListPage extends StatefulWidget {
   const TaskListPage({super.key});
@@ -104,18 +105,26 @@ class _TaskListPageState extends State<TaskListPage> {
       await prefs.setInt(StorageKeys.consecutiveTaskDays, consecutiveDays);
       await prefs.setString(StorageKeys.lastTaskCompletionDate, todayStr);
 
-      // 判断是否提前完成(比较日期而非具体时间)
+      // 判断是否提前完成(比较日期而非具体时间) // 获取基础场景
       final duedate = DateTime(task.dueDate.year,task.dueDate.month,task.dueDate.day);
       final nowdate = DateTime(now.year,now.month,now.day);
-      String scene;
+      String basescene;
       if(nowdate.isBefore(duedate)) {
-        scene = 'task_early'; // 提前
+        basescene = 'task_early'; // 提前
       } else if(nowdate.isAfter(duedate)) {
-        scene = 'task_late'; // 逾期
+        basescene = 'task_late'; // 逾期
       } else {
-        scene = 'task_on_time'; // 按时
+        basescene = 'task_on_time'; // 按时
       }
-      final dialogue = BeastManager.getRandomDialogue(scene);
+
+      // 读取用户行为数据
+      final completionRate = await TaskHelper.getCompletionRate();
+      final dialogue = await _selectTaskDialogue(
+        basescene: basescene,
+        consecutiveDays: consecutiveDays,
+        completionRate: completionRate,
+        // isImportant: task.isImportant,
+      );
 
       // 更新状态
       setState(() {
@@ -134,6 +143,31 @@ class _TaskListPageState extends State<TaskListPage> {
         task.isCompleted = false;
       });
       _saveTasks(); // 保存更新后的任务列表
+    }
+  }
+
+  // 选择最终台词
+  Future<String> _selectTaskDialogue({
+    required String basescene,
+    required int consecutiveDays,
+    required double completionRate,
+    // bool isImportant = false,
+  }) async {
+    // 优先级：连续天数 > 完成率 > 重要任务 > 基础场景
+    if(consecutiveDays >= 7) {
+      // print('使用 streak_7');
+      return BeastManager.getRandomDialogue('streak_7');
+    } else if(consecutiveDays >= 3) {
+      // print('使用 streak_3');
+      return BeastManager.getRandomDialogue('streak_3');
+    } else if(completionRate > 0.8) {
+      // print('使用 high_completion');
+      return BeastManager.getRandomDialogue('high_completion');
+    } /*else if(isImportant) {
+      return BeastManager.getRandomDialogue('important_task');
+    }*/else{
+      // print('使用基础场景: $basescene');
+      return BeastManager.getRandomDialogue(basescene);
     }
   }
 
