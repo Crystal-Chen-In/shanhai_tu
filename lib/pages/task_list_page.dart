@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/task.dart';
-import '../utils/beast_manager.dart';
 import '../widgets/feedback_dialog.dart';
 import '../utils/constants.dart';
 import '../utils/task_helper.dart';
+import '../utils/feedback_selector.dart';
 
 class TaskListPage extends StatefulWidget {
   const TaskListPage({super.key});
@@ -119,7 +119,7 @@ class _TaskListPageState extends State<TaskListPage> {
 
       // 读取用户行为数据
       final completionRate = await TaskHelper.getCompletionRate();
-      final dialogue = await _selectTaskDialogue(
+      final dialogue = await FeedbackSelector.selectTaskDialogue(
         basescene: basescene,
         consecutiveDays: consecutiveDays,
         completionRate: completionRate,
@@ -143,31 +143,6 @@ class _TaskListPageState extends State<TaskListPage> {
         task.isCompleted = false;
       });
       _saveTasks(); // 保存更新后的任务列表
-    }
-  }
-
-  // 选择最终台词
-  Future<String> _selectTaskDialogue({
-    required String basescene,
-    required int consecutiveDays,
-    required double completionRate,
-    bool isImportant = false,
-  }) async {
-    // 优先级：连续天数 > 完成率 > 重要任务 > 基础场景
-    if(consecutiveDays >= 7) {
-      // print('使用 streak_7');
-      return BeastManager.getRandomDialogue('streak_7');
-    } else if(consecutiveDays >= 3) {
-      // print('使用 streak_3');
-      return BeastManager.getRandomDialogue('streak_3');
-    } else if(completionRate > 0.8) {
-      // print('使用 high_completion');
-      return BeastManager.getRandomDialogue('high_completion');
-    } else if(isImportant) {
-      return BeastManager.getRandomDialogue('important_task');
-    } else {
-      // print('使用基础场景: $basescene');
-      return BeastManager.getRandomDialogue(basescene);
     }
   }
 

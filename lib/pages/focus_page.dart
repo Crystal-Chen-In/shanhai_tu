@@ -1,9 +1,9 @@
 // 专注页面组件
 import 'package:flutter/material.dart';
-import 'package:shanhai_tu/utils/beast_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import '../utils/constants.dart';
+import '../utils/feedback_selector.dart';
 import '../widgets/feedback_dialog.dart';
 
 class FocusPage extends StatefulWidget {
@@ -51,7 +51,7 @@ class _FocusPageState extends State<FocusPage> {
 
   // 计算进度
   double get _progress {
-    return 1.0 - (_remainingSeconds / _focusMinutes);
+    return 1.0 - (_remainingSeconds / _totalSeconds);
   }
 
   @override
@@ -234,12 +234,7 @@ class _FocusPageState extends State<FocusPage> {
     await prefs.setInt(StorageKeys.totalFocusSeconds, currentTotalFocus);
 
     // 获取专注完成的随机台词
-    String dialogue;
-    if(_totalSeconds > 40 * 60){
-      dialogue = BeastManager.getRandomDialogue('focus_long');
-    }else {
-      dialogue = BeastManager.getRandomDialogue('focus_complete');
-    }
+    final dialogue = FeedbackSelector.selectFocusDialogue(_totalSeconds);
 
     if(mounted) {
       await FeedbackDialog.show(context, dialogue);
