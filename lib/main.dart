@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/task_list_page.dart'; // 导入任务列表页面组件
 import 'pages/focus_page.dart'; // 导入专注页面组件
+import 'pages/stats_page.dart'; // 导入修行日记页面组件
 import '../models/task.dart'; // 导入任务模型
 import '../utils/beast_manager.dart'; // 获取随机台词
 import '../widgets/feedback_dialog.dart'; // 导入反馈对话框组件
@@ -37,6 +38,7 @@ class _MainPageState extends State<MainPage> {
   final List<Widget> _pages = [
     const DonfuHomePage(), // 洞府页面
     const TaskListPage(), // 卷轴页面
+    const StatsPage(), // 修行日记页面
   ];
 
   @override
@@ -59,6 +61,10 @@ class _MainPageState extends State<MainPage> {
             icon: Icon(Icons.assignment),
             label: '卷轴',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.book),
+            label: '修行录'
+          )
         ],
       ),
     );
