@@ -123,7 +123,7 @@ class _TaskListPageState extends State<TaskListPage> {
         basescene: basescene,
         consecutiveDays: consecutiveDays,
         completionRate: completionRate,
-        // isImportant: task.isImportant,
+        isImportant: task.isImporatant,
       );
 
       // 更新状态
@@ -151,7 +151,7 @@ class _TaskListPageState extends State<TaskListPage> {
     required String basescene,
     required int consecutiveDays,
     required double completionRate,
-    // bool isImportant = false,
+    bool isImportant = false,
   }) async {
     // 优先级：连续天数 > 完成率 > 重要任务 > 基础场景
     if(consecutiveDays >= 7) {
@@ -163,9 +163,9 @@ class _TaskListPageState extends State<TaskListPage> {
     } else if(completionRate > 0.8) {
       // print('使用 high_completion');
       return BeastManager.getRandomDialogue('high_completion');
-    } /*else if(isImportant) {
+    } else if(isImportant) {
       return BeastManager.getRandomDialogue('important_task');
-    }*/else{
+    } else {
       // print('使用基础场景: $basescene');
       return BeastManager.getRandomDialogue(basescene);
     }
@@ -206,12 +206,20 @@ class _TaskListPageState extends State<TaskListPage> {
                   onChanged: (_) => _toggleTaskCompletion(task), // 切换完成状态
                   activeColor: Colors.teal,
                 ),
-                title: Text(
-                  task.title,
-                  style: TextStyle(
-                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                    color: task.isCompleted ? Colors.grey : Colors.black,
-                  ),
+                title: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        task.title,
+                        style: TextStyle(
+                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                          color: task.isCompleted ? Colors.grey : Colors.black,
+                        ),
+                      ),
+                    ),
+                    if(task.isImporatant)
+                      const Icon(Icons.star,color: Colors.amber,size: 18),
+                  ],
                 ),
                 subtitle: Text(
                   '截止: ${_formatDate(task.dueDate)}',
@@ -274,6 +282,7 @@ class AddTaskDialog extends StatefulWidget {
 class _AddTaskDialogState extends State<AddTaskDialog> {
   final _titleController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
+  bool _isImportant = false;
 
   @override
   void initState() {
@@ -281,6 +290,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
     if (widget.existingTask != null) {
       _titleController.text = widget.existingTask!.title;
       _selectedDate = widget.existingTask!.dueDate;
+      _isImportant = widget.existingTask!.isImporatant;
     }
   }
 
@@ -325,6 +335,19 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             trailing: const Icon(Icons.calendar_today),
             onTap: () => _selectDate(context), // 选择截止日期
           ),
+          const SizedBox(height: 8),
+          // 重要任务开关
+          SwitchListTile(
+            title: const Text('重要任务'),
+            subtitle: const Text('标记为重要任务后，完成时白泽会特别鼓励'),
+            value: _isImportant,
+            onChanged: (value){
+              setState(() {
+                _isImportant = value;
+              });
+            },
+            secondary: const Icon(Icons.star,color: Colors.amber),
+          ),
         ],
       ),
       actions: [
@@ -340,6 +363,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
               title: _titleController.text.trim(),
               dueDate: _selectedDate,
               isCompleted: widget.existingTask?.isCompleted ?? false, // 编辑时保留完成状态
+              isImporatant: _isImportant,
             );
             Navigator.pop(context, task); // 返回新建/编辑的任务对象
           },

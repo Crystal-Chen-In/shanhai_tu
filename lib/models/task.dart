@@ -4,6 +4,7 @@ class Task {
   String title;
   DateTime dueDate;
   bool isCompleted;
+  bool isImporatant;
   DateTime createdAt;
   DateTime? completedAt; // 任务完成时间,null表示未完成
 
@@ -12,6 +13,7 @@ class Task {
     required this.title,
     required this.dueDate,
     this.isCompleted = false,
+    this.isImporatant = false,
     DateTime? createdAt,
     this.completedAt,
   }) : createdAt = createdAt ?? DateTime.now();
@@ -24,6 +26,7 @@ class Task {
     'isCompleted': isCompleted,
     'createdAt': createdAt.toIso8601String(),
     'completedAt': completedAt?.toIso8601String(),
+    'isImportant': isImporatant,
   };
 
   // 从 Map 创建 Task 对象
@@ -34,6 +37,7 @@ class Task {
     isCompleted: json['isCompleted'],
     createdAt: DateTime.parse(json['createdAt']),
     completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
+    isImporatant: json['isImportant'] ?? false,
   );
 
 }
