@@ -278,12 +278,28 @@ class _FocusPageState extends State<FocusPage> {
       await FeedbackDialog.show(context, dialogue, reason: reason);
     }
 
-    // 显示完成提示
+    // 显示修为增加提示,美化弹窗
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('专注完成！修为 +10'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              const Text(
+                '专注完成！修为 +10',
+                style: TextStyle(fontFamily: 'AppFont'),
+              ),
+            ],
+          ),
+          backgroundColor: const Color.fromARGB(255, 20, 137, 124),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          duration: const Duration(seconds: 2),
+          margin: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         ),
       );
     }

@@ -194,10 +194,15 @@ class _TaskListPageState extends State<TaskListPage> {
                 return Dismissible(
                   key: Key(task.id), // 使用任务ID作为唯一Key
                   background: Container(
-                    color: Colors.red,
+                    color: Colors.transparent,
                     alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    child: const Icon(Icons.delete, color: Colors.white),
+                    child: Container(
+                      width: 85,
+                      color: Colors.red,
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.only(right: 20),
+                      child: const Icon(Icons.delete, color: Colors.white),
+                    ),
                   ),
                   direction: DismissDirection.endToStart, // 只能从右向左滑动删除
                   onDismissed: (_) => _deleteTask(task.id), // 删除任务
@@ -324,37 +329,39 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.existingTask == null ? '添加任务' : '编辑任务'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: '任务名称',
-              hintText: '例如：完成数学作业',
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: '任务名称',
+                hintText: '例如：完成数学作业',
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          ListTile(
-            title: const Text('截止日期'),
-            subtitle: Text(_formatDate(_selectedDate)),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: () => _selectDate(context), // 选择截止日期
-          ),
-          const SizedBox(height: 8),
-          // 重要任务开关
-          SwitchListTile(
-            title: const Text('重要任务'),
-            subtitle: const Text('标记为重要任务后，完成时白泽会特别鼓励'),
-            value: _isImportant,
-            onChanged: (value) {
-              setState(() {
-                _isImportant = value;
-              });
-            },
-            secondary: const Icon(Icons.star, color: Colors.amber),
-          ),
-        ],
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('截止日期'),
+              subtitle: Text(_formatDate(_selectedDate)),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () => _selectDate(context), // 选择截止日期
+            ),
+            const SizedBox(height: 8),
+            // 重要任务开关
+            SwitchListTile(
+              title: const Text('重要任务'),
+              // subtitle: const Text('标记为重要任务后，完成时白泽会特别鼓励'),
+              value: _isImportant,
+              onChanged: (value) {
+                setState(() {
+                  _isImportant = value;
+                });
+              },
+              secondary: const Icon(Icons.star, color: Colors.amber),
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
