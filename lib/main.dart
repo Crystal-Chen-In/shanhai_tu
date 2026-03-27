@@ -17,7 +17,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp( //配置应用标题和主页
+    return MaterialApp(
+      //配置应用标题和主页
       title: '山海途',
       home: const MainPage(),
     );
@@ -52,19 +53,12 @@ class _MainPageState extends State<MainPage> {
             _selectedIndex = index; // 点击时更新选中的索引
           });
         },
+        selectedLabelStyle: TextStyle(fontFamily: 'AppFont'),
+        unselectedLabelStyle: TextStyle(fontFamily: 'AppFont'),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '洞府',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: '卷轴',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.book),
-            label: '修行录'
-          )
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '洞府'),
+          BottomNavigationBarItem(icon: Icon(Icons.assignment), label: '卷轴'),
+          BottomNavigationBarItem(icon: Icon(Icons.book), label: '修行录'),
         ],
       ),
     );
@@ -77,7 +71,6 @@ class DonfuHomePage extends StatefulWidget {
 
   @override
   State<DonfuHomePage> createState() => _DonfuHomePageState();
-
 }
 
 class _DonfuHomePageState extends State<DonfuHomePage> {
@@ -112,106 +105,136 @@ class _DonfuHomePageState extends State<DonfuHomePage> {
       return; // 解析失败则不继续检查
     }
 
-    if(decoded is! List) return; // 解析结果不是列表则不继续检查
+    if (decoded is! List) return; // 解析结果不是列表则不继续检查
 
-    final tasks = decoded.whereType<Map<String,dynamic>>().map((item) => Task.fromJson(item)).toList();
+    final tasks = decoded
+        .whereType<Map<String, dynamic>>()
+        .map((item) => Task.fromJson(item))
+        .toList();
 
     // 筛选未完成且即将逾期任务
     final now = DateTime.now();
     final nowdate = DateTime(now.year, now.month, now.day);
     const remindDays = 3; // 提前3天提醒
     final upcomingTasks = tasks.where((task) {
-      if(task.isCompleted) return false; // 已完成的任务不提示
-      final duedate = DateTime(task.dueDate.year, task.dueDate.month, task.dueDate.day);
+      if (task.isCompleted) return false; // 已完成的任务不提示
+      final duedate = DateTime(
+        task.dueDate.year,
+        task.dueDate.month,
+        task.dueDate.day,
+      );
       final daysLeft = duedate.difference(nowdate).inDays;
       return daysLeft >= 0 && daysLeft <= remindDays; // 0表示今日到期
     }).toList();
 
     // 如果有即将逾期的任务，且当天尚未提醒过，显示提示对话框
-    if(upcomingTasks.isNotEmpty){
+    if (upcomingTasks.isNotEmpty) {
       //只提醒一次
       final lastReminderDate = prefs.getString('lastUpcomingReminderDate');
       final todayStr = nowdate.toIso8601String().split('T')[0]; // 获取年月日部分
 
-      if(lastReminderDate != todayStr){
+      if (lastReminderDate != todayStr) {
         await prefs.setString('lastUpcomingReminderDate', todayStr);
 
         // 获取随机台词
         final dialogue = BeastManager.getRandomDialogue('upcoming_reminder');
-        if(mounted){
+        if (mounted) {
           await FeedbackDialog.show(context, dialogue);
         }
       }
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('洞府'),
-        centerTitle: true,
-        backgroundColor: Colors.teal.shade700,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-            'assets/images/baize1.png', // 白泽图片占位
-            width: 200, 
-            ),
-            const SizedBox(height: 30),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal:24,vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.teal.shade50,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.teal.shade200,
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  )
-                ]
-              ),
-              child: Text(
-                '修为：$_cultivation',
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () async {
-                // 点击开始专注按钮，跳转到专注修心页面
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (ctx) => const FocusPage()),
-                );
-                // 从专注修心页面返回后，重新加载修为值，更新界面
-                _loadCultivation();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              child: const Text(
-                '开始专注',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ],
+        title: const Text(
+          '洞府修心',
+          style: TextStyle(fontFamily: 'AppFont', color: Colors.white),
         ),
+        centerTitle: true,
+        backgroundColor: const Color.fromARGB(255, 20, 137, 124),
+      ),
+      body: Stack(
+        children: [
+          // 背景图
+          Container(
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/bgpic.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/baize.png', // 白泽图片占位
+                  width: 250,
+                ),
+                const SizedBox(height: 30),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.teal.shade200,
+                        blurRadius: 6,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    '修为：$_cultivation',
+                    style: const TextStyle(
+                      fontFamily: 'AppFont',
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () async {
+                    // 点击开始专注按钮，跳转到专注修心页面
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (ctx) => const FocusPage()),
+                    );
+                    // 从专注修心页面返回后，重新加载修为值，更新界面
+                    _loadCultivation();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    '开始专注',
+                    style: TextStyle(
+                      fontFamily: 'AppFont',
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -225,15 +248,12 @@ class PlaceholderPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('历练卷轴'),
+        title: const Text('历练卷轴', style: TextStyle(fontFamily: 'AppFont')),
         centerTitle: true,
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: const Color.fromARGB(255, 20, 137, 124),
       ),
       body: const Center(
-        child: Text(
-          '任务列表功能即将开放，敬请期待！',
-          style: TextStyle(fontSize: 18),
-        ),
+        child: Text('任务列表功能即将开放，敬请期待！', style: TextStyle(fontSize: 18)),
       ),
     );
   }

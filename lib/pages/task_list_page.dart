@@ -13,7 +13,6 @@ class TaskListPage extends StatefulWidget {
 
   @override
   State<TaskListPage> createState() => _TaskListPageState();
-
 }
 
 // 任务列表页面状态类，负责显示和管理任务列表
@@ -43,12 +42,14 @@ class _TaskListPageState extends State<TaskListPage> {
   // 保存任务列表到本地存储
   Future<void> _saveTasks() async {
     final prefs = await SharedPreferences.getInstance();
-    final String tasksJson = jsonEncode(_tasks.map((task) => task.toJson()).toList());
+    final String tasksJson = jsonEncode(
+      _tasks.map((task) => task.toJson()).toList(),
+    );
     await prefs.setString('tasks', tasksJson);
   }
 
   // 添加新任务
-  void _addTask() async{
+  void _addTask() async {
     final result = await showDialog<Task>(
       context: context,
       builder: (ctx) => AddTaskDialog(),
@@ -74,26 +75,32 @@ class _TaskListPageState extends State<TaskListPage> {
   // 切换任务完成状态
   void _toggleTaskCompletion(Task task) async {
     // 如果任务原本未完成，现在要标记为完成
-    if(!task.isCompleted) {
+    if (!task.isCompleted) {
       // 记录完成时间
       task.completedAt = DateTime.now();
 
       // 更新连续完成天数
       final prefs = await SharedPreferences.getInstance();
       int consecutiveDays = prefs.getInt(StorageKeys.consecutiveTaskDays) ?? 0;
-      final lastCompletionDateStr = prefs.getString(StorageKeys.lastTaskCompletionDate);
+      final lastCompletionDateStr = prefs.getString(
+        StorageKeys.lastTaskCompletionDate,
+      );
 
       final now = DateTime.now();
       final todayDate = DateTime(now.year, now.month, now.day); // 只比较日期部分
       final todayStr = todayDate.toIso8601String().split('T')[0]; // 只保留日期部分
-      if(lastCompletionDateStr == null) {
+      if (lastCompletionDateStr == null) {
         consecutiveDays = 1;
       } else {
         final lastDate = DateTime.parse(lastCompletionDateStr);
-        final lastDateOnly = DateTime(lastDate.year, lastDate.month, lastDate.day);
+        final lastDateOnly = DateTime(
+          lastDate.year,
+          lastDate.month,
+          lastDate.day,
+        );
         final yesterdayDateOnly = todayDate.subtract(const Duration(days: 1));
 
-        if(lastDateOnly == yesterdayDateOnly) {
+        if (lastDateOnly == yesterdayDateOnly) {
           consecutiveDays += 1; // 连续完成，增加天数
         } else if (lastDateOnly == todayDate) {
           // 同一天内完成多次，不增加天数
@@ -106,12 +113,16 @@ class _TaskListPageState extends State<TaskListPage> {
       await prefs.setString(StorageKeys.lastTaskCompletionDate, todayStr);
 
       // 判断是否提前完成(比较日期而非具体时间) // 获取基础场景
-      final duedate = DateTime(task.dueDate.year,task.dueDate.month,task.dueDate.day);
-      final nowdate = DateTime(now.year,now.month,now.day);
+      final duedate = DateTime(
+        task.dueDate.year,
+        task.dueDate.month,
+        task.dueDate.day,
+      );
+      final nowdate = DateTime(now.year, now.month, now.day);
       String basescene;
-      if(nowdate.isBefore(duedate)) {
+      if (nowdate.isBefore(duedate)) {
         basescene = 'task_early'; // 提前
-      } else if(nowdate.isAfter(duedate)) {
+      } else if (nowdate.isAfter(duedate)) {
         basescene = 'task_late'; // 逾期
       } else {
         basescene = 'task_on_time'; // 按时
@@ -125,6 +136,18 @@ class _TaskListPageState extends State<TaskListPage> {
         completionRate: completionRate,
         isImportant: task.isImporatant,
       );
+      String? reason;
+      if (consecutiveDays >= 7) {
+        reason = '连续7天修行';
+      } else if (consecutiveDays >= 3) {
+        reason = '连续3天修行';
+      } else if (completionRate > 0.8) {
+        reason = '任务完成率极高';
+      } else if (task.isImporatant) {
+        reason = '重要任务已完成';
+      } else {
+        reason = null;
+      }
 
       // 更新状态
       setState(() {
@@ -133,10 +156,10 @@ class _TaskListPageState extends State<TaskListPage> {
       _saveTasks(); // 保存更新后的任务列表
 
       // 显示反馈对话框
-      if(mounted) {
-        await FeedbackDialog.show(context, dialogue);
+      if (mounted) {
+        await FeedbackDialog.show(context, dialogue, reason: reason);
       }
-    }else {
+    } else {
       // 如果任务原本已完成，现在要标记为未完成
       task.completedAt = null; // 清除完成时间
       setState(() {
@@ -150,67 +173,76 @@ class _TaskListPageState extends State<TaskListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('历练卷轴'),
+        title: const Text(
+          '历练卷轴',
+          style: TextStyle(fontFamily: 'AppFont', color: Colors.white),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: const Color.fromARGB(255, 20, 137, 124),
       ),
       body: _tasks.isEmpty
           ? const Center(
-            child:Text(
-              '暂无任务，点击右下角按钮添加',
-              style: TextStyle(fontSize: 16),
-            ),
-          )
-        : ListView.builder(
-          itemCount: _tasks.length,
-          itemBuilder: (ctx,index) {
-            final task = _tasks[index];
-            return Dismissible(
-              key: Key(task.id), // 使用任务ID作为唯一Key
-              background: Container(
-                color: Colors.red,
-                alignment: Alignment.centerRight,
-                padding: const EdgeInsets.only(right: 20),
-                child: const Icon(Icons.delete, color: Colors.white),
+              child: Text(
+                '暂无任务，点击右下角按钮添加',
+                style: TextStyle(fontSize: 16, fontFamily: 'AppFont'),
               ),
-              direction: DismissDirection.endToStart, // 只能从右向左滑动删除
-              onDismissed: (_) => _deleteTask(task.id), // 删除任务
-              child: ListTile(
-                leading: Checkbox(
-                  value: task.isCompleted,
-                  onChanged: (_) => _toggleTaskCompletion(task), // 切换完成状态
-                  activeColor: Colors.teal,
-                ),
-                title: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.title,
-                        style: TextStyle(
-                          decoration: task.isCompleted ? TextDecoration.lineThrough : null,
-                          color: task.isCompleted ? Colors.grey : Colors.black,
+            )
+          : ListView.builder(
+              itemCount: _tasks.length,
+              itemBuilder: (ctx, index) {
+                final task = _tasks[index];
+                return Dismissible(
+                  key: Key(task.id), // 使用任务ID作为唯一Key
+                  background: Container(
+                    color: Colors.red,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  direction: DismissDirection.endToStart, // 只能从右向左滑动删除
+                  onDismissed: (_) => _deleteTask(task.id), // 删除任务
+                  child: ListTile(
+                    leading: Checkbox(
+                      value: task.isCompleted,
+                      onChanged: (_) => _toggleTaskCompletion(task), // 切换完成状态
+                      activeColor: Colors.teal,
+                    ),
+                    title: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            task.title,
+                            style: TextStyle(
+                              decoration: task.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              color: task.isCompleted
+                                  ? Colors.grey
+                                  : Colors.black,
+                            ),
+                          ),
                         ),
+                        if (task.isImporatant)
+                          const Icon(Icons.star, color: Colors.amber, size: 18),
+                      ],
+                    ),
+                    subtitle: Text(
+                      '截止: ${_formatDate(task.dueDate)}',
+                      style: TextStyle(
+                        color: task.isCompleted
+                            ? Colors.grey
+                            : Colors.grey.shade700,
                       ),
                     ),
-                    if(task.isImporatant)
-                      const Icon(Icons.star,color: Colors.amber,size: 18),
-                  ],
-                ),
-                subtitle: Text(
-                  '截止: ${_formatDate(task.dueDate)}',
-                  style: TextStyle(
-                    color: task.isCompleted ? Colors.grey : Colors.grey.shade700,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.grey),
+                      onPressed: () => _editTask(task), // 编辑任务
+                    ),
                   ),
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.grey),
-                  onPressed: () => _editTask(task), // 编辑任务
-                ),
-              ),
-            );
-          },
-        ),
-  floatingActionButton: FloatingActionButton(
+                );
+              },
+            ),
+      floatingActionButton: FloatingActionButton(
         onPressed: _addTask, // 添加新任务
         backgroundColor: Colors.teal,
         child: const Icon(Icons.add),
@@ -241,7 +273,6 @@ class _TaskListPageState extends State<TaskListPage> {
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month}-${date.day}';
   }
-
 }
 
 // 添加\编辑任务对话框组件
@@ -278,8 +309,8 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   Future<void> _selectDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate, 
-      firstDate: DateTime(2000), 
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
     if (picked != null && picked != _selectedDate) {
@@ -305,7 +336,7 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           ),
           const SizedBox(height: 16),
           ListTile(
-            title:  const Text('截止日期'),
+            title: const Text('截止日期'),
             subtitle: Text(_formatDate(_selectedDate)),
             trailing: const Icon(Icons.calendar_today),
             onTap: () => _selectDate(context), // 选择截止日期
@@ -316,12 +347,12 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
             title: const Text('重要任务'),
             subtitle: const Text('标记为重要任务后，完成时白泽会特别鼓励'),
             value: _isImportant,
-            onChanged: (value){
+            onChanged: (value) {
               setState(() {
                 _isImportant = value;
               });
             },
-            secondary: const Icon(Icons.star,color: Colors.amber),
+            secondary: const Icon(Icons.star, color: Colors.amber),
           ),
         ],
       ),
@@ -334,10 +365,13 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
           onPressed: () {
             if (_titleController.text.trim().isEmpty) return; // 标题不能为空
             final task = Task(
-              id: widget.existingTask?.id ?? DateTime.now().millisecondsSinceEpoch.toString(), // 编辑时保留ID
+              id:
+                  widget.existingTask?.id ??
+                  DateTime.now().millisecondsSinceEpoch.toString(), // 编辑时保留ID
               title: _titleController.text.trim(),
               dueDate: _selectedDate,
-              isCompleted: widget.existingTask?.isCompleted ?? false, // 编辑时保留完成状态
+              isCompleted:
+                  widget.existingTask?.isCompleted ?? false, // 编辑时保留完成状态
               isImporatant: _isImportant,
             );
             Navigator.pop(context, task); // 返回新建/编辑的任务对象
@@ -351,5 +385,4 @@ class _AddTaskDialogState extends State<AddTaskDialog> {
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month}-${date.day}';
   }
-
 }

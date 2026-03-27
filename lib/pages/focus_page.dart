@@ -64,9 +64,12 @@ class _FocusPageState extends State<FocusPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('专注修心'),
+        title: const Text(
+          '专注心流',
+          style: TextStyle(fontFamily: 'AppFont', color: Colors.white),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.teal.shade700,
+        backgroundColor: const Color.fromARGB(255, 20, 137, 124),
       ),
       body: Center(
         child: Column(
@@ -99,10 +102,7 @@ class _FocusPageState extends State<FocusPage> {
                   icon: const Icon(Icons.remove_circle_outline),
                   iconSize: 32,
                 ),
-                Text(
-                  '$_focusMinutes 分钟',
-                  style: const TextStyle(fontSize: 18),
-                ),
+                Text('$_focusMinutes 分钟', style: const TextStyle(fontSize: 18)),
                 IconButton(
                   onPressed: _isActive ? null : _increaseFocusTime,
                   icon: const Icon(Icons.add_circle_outline),
@@ -119,31 +119,61 @@ class _FocusPageState extends State<FocusPage> {
                 ElevatedButton(
                   onPressed: _isActive ? null : _startTimer, // 如果正在计时，按钮不可用
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    backgroundColor: const Color.fromARGB(255, 20, 137, 124),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 12,
+                    ),
                   ),
-                  child: const Text('开始'),
+                  child: const Text(
+                    '开始',
+                    style: TextStyle(
+                      fontFamily: 'AppFont',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: _isActive ? _pauseTimer : null, // 如果没有在计时，按钮不可用
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    backgroundColor: const Color.fromARGB(255, 241, 183, 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 12,
+                    ),
                   ),
-                  child: const Text('暂停'),
+                  child: const Text(
+                    '暂停',
+                    style: TextStyle(
+                      fontFamily: 'AppFont',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 20),
                 ElevatedButton(
                   onPressed: _resetTimer,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    backgroundColor: const Color.fromARGB(255, 236, 109, 100),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                   ),
-                  child: const Text('重置'),
+                  child: const Text(
+                    '重置',
+                    style: TextStyle(
+                      fontFamily: 'AppFont',
+                      fontSize: 18,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -152,29 +182,30 @@ class _FocusPageState extends State<FocusPage> {
 
   // 开始计时
   void _startTimer() {
-  _timer?.cancel(); // 先取消之前的定时器
+    _timer?.cancel(); // 先取消之前的定时器
 
-  setState(() {
-    _isActive = true;
-  });
+    setState(() {
+      _isActive = true;
+    });
 
-  // 创建一个每秒触发的定时器
-  _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-    if(_remainingSeconds <= 1) {
-      // 时间到，停止计时
-      _timer?.cancel();
-      _isActive = false;
-      _remainingSeconds = 0;
-      setState(() {}); // 更新界面显示 00:00
-      _onFocusComplete(); // 触发专注完成事件
-    }else {
-      // 继续倒计时
-      setState(() {
-        _remainingSeconds--;
-      });
-    }
-  });
+    // 创建一个每秒触发的定时器
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds <= 1) {
+        // 时间到，停止计时
+        _timer?.cancel();
+        _isActive = false;
+        _remainingSeconds = 0;
+        setState(() {}); // 更新界面显示 00:00
+        _onFocusComplete(); // 触发专注完成事件
+      } else {
+        // 继续倒计时
+        setState(() {
+          _remainingSeconds--;
+        });
+      }
+    });
   }
+
   // 暂停计时
   void _pauseTimer() {
     _timer?.cancel(); // 取消定时器
@@ -194,7 +225,7 @@ class _FocusPageState extends State<FocusPage> {
 
   // 增
   void _increaseFocusTime() {
-    if(_isActive) return; //计时中不允许修改
+    if (_isActive) return; //计时中不允许修改
     setState(() {
       _focusMinutes++;
       _totalSeconds = _focusMinutes * 60;
@@ -205,7 +236,7 @@ class _FocusPageState extends State<FocusPage> {
 
   // 减
   void _decreaseFocusTime() {
-    if(_isActive || _focusMinutes <= 1) return; //最小1分钟
+    if (_isActive || _focusMinutes <= 1) return; //最小1分钟
     setState(() {
       _focusMinutes--;
       _totalSeconds = _focusMinutes * 60;
@@ -236,12 +267,19 @@ class _FocusPageState extends State<FocusPage> {
     // 获取专注完成的随机台词
     final dialogue = FeedbackSelector.selectFocusDialogue(_totalSeconds);
 
-    if(mounted) {
-      await FeedbackDialog.show(context, dialogue);
+    String? reason;
+    if (_totalSeconds >= 40 * 60) {
+      reason = '超长专注';
+    } else {
+      reason = null;
+    }
+
+    if (mounted) {
+      await FeedbackDialog.show(context, dialogue, reason: reason);
     }
 
     // 显示完成提示
-    if(mounted) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('专注完成！修为 +10'),
@@ -250,7 +288,7 @@ class _FocusPageState extends State<FocusPage> {
       );
     }
 
-    if(mounted) {
+    if (mounted) {
       Navigator.pop(context); // 返回洞府页面
     }
   }

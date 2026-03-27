@@ -20,7 +20,13 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/images/baize.png
     - assets/images/baize1.png
+    - assets/images/bgpic.png
+  fonts:
+    - family: AppFont
+      fonts:
+        - asset: assets/fonts/AlimamaDaoLiTi.ttf
 
 flutter_launcher_icons:
   android: true
